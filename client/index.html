@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Just a HTML Page</title>
+    <style>
+        #map {
+            margin: 10px auto 0;
+            cursor: pointer;
+            position: relative;
+            width: 500px;
+            height: 500px;
+            background-color: blanchedalmond;
+            background-image: url('map.png');
+            background-size: 100% 100%;
+        }
+
+        #map>canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <link rel="stylesheet" href="./lib/semantic.min.css" />
+
+    <script src="./lib/jquery-3.6.1.min.js"></script>
+    <script src="./lib/semantic.min.js"></script>
+
+</head>
+
+<body>
+
+    <div class="ui sidebar vertical left menu overlay visible" style="overflow: visible !important;">
+        <div class="item">
+            <div class="ui float input">
+                <input type="text" id="command" value='["world","wind_source", 90]' />
+            </div>
+        </div>
+        
+        <div class="item">
+            <b><span id="val_weather_description"></span></b><br>
+            Wind aus: <span id="val_wind_source">0</span>°<br>
+            Beauford: <span id="val_beauford_value">0</span><br>
+            Windgeschw.: <span id="val_wind_speed">0</span> kn<br>
+            Wellen: <span id="val_wave_height">0</span> ft<br>
+        </div>
+    </div>
+
+    <div class="pusher">
+        <div class="ui icon menu borderless" style="border-radius: 0 !important; border: 0; margin-left: 260px">
+            <!-- -->
+        </div>
+        <div class="container" style="margin-left: 260px">
+            <div id="map">
+                <canvas id="mapC1">
+            </div>
+
+            <textarea id="debug" style="width: 100%; min-height: 600px"></textarea>
+        </div>
+
+       
+    </div>
+    </div>
+
+    <script src="./nonGUI.js"></script>
+    <script>
+        $(document).ready(function () {
+            nonGUI.init({
+                host: "ws://127.0.0.1:8888",
+                user_token: '2c713c22-82f6-4ec4-a9e0-d437e17ebd57', // admin
+                //user_token: '60524bc0-f984-4c55-a4df-ca97763ff8f3', // User
+            });
+        });
+    </script>
+
+</body>
+
+</html>
