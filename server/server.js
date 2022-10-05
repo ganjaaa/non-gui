@@ -70,22 +70,22 @@ wsServer.on('request', function (request) {
             }
 
             if (is_admin === true) {
-                if (json[0] == "world") {
-                    world.commands(json[1], json[2]);
-                } else if (json[0] == "system") {
-                    if (json[1] == "export") {
-                        // TODO: Export
-                    }
-                    if (json[1] == "import") {
-                        // TODO: Import
-                    }
-                } else {
-                    var index = parseInt(json[0]);
-                    if (index >= 0 && index < objects.length) {
-                        objects[index].commands(json[1], json[2]);
-                    }
+                switch (json[0]) {
+                    case "world":
+                        world.commands(json[1], json[2]);
+                        break;
+                    case "system":
+                        commands(json[1], json[2]);
+                        break;
+                    default:
+                        var num_index = parseInt(json[0]);
+                        if (num_index >= 0 && num_index < objects.length) {
+                            objects[index].commands(json[1], json[2]);
+                        }
+                        break;
                 }
                 broadcast_updates();
+                return;
             }
         }
     });
@@ -101,6 +101,7 @@ wsServer.on('request', function (request) {
 
 function broadcast_updates() {
     var data = {
+        type: 'update',
         world: world.info(),
         objects: []
     };
@@ -113,10 +114,37 @@ function broadcast_updates() {
     }
 }
 
-function utf8_to_b64(str) {
-    return window.btoa(encodeURIComponent(str));
-}
+function commands(cmd, val) {
+    var data = {};
 
-function b64_to_utf8(str) {
-    return decodeURIComponent(window.atob(str));
+    switch (cmd) {
+        case "import":
+            var buff = Buffer.from(val, 'base64');
+            var str = buff.toString('utf-8');
+            var data = JSON.parse(str);
+
+            world.import(data.world);
+            objects = [];
+            for (var i = 0; i < data.objects.length; i++) {
+                objects.push(new Classes.WorldItem(0, "", false, ""));
+                objects[i].import(data.objects[i]);
+            }
+            break;
+        case "export":
+            var data = {
+                world: world.export(),
+                objects: []
+            }
+            for (var i = 0; i < objects.length; i++) {
+                data.objects.push(objects[i].export());
+            }
+            var buff = Buffer.from(JSON.stringify(data), 'utf-8');
+            for (var i = 0; i < user.length; i++) {
+                user[i].send(JSON.stringify({
+                    type: 'export',
+                    data: buff.toString('base64')
+                }));
+            }
+            break;
+    }
 }

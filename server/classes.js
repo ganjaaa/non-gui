@@ -22,16 +22,13 @@ class World {
         this.beauford_value = 4; // Borfor Scala 1-12 
     }
 
-    import = (data) => {
-        this.wind_source = data.wind_source;
-        this.beauford_value = data.beauford_value;
+    export = () => {
+        return [this.wind_source, this.beauford_value];
     }
 
-    export = () => {
-        return {
-            wind_source: this.wind_source,
-            beauford_value: this.beauford_value,
-        }
+    import = (data) => {
+        this.wind_source = data[0];
+        this.beauford_value = data[1];
     }
 
     info = () => {
@@ -96,19 +93,15 @@ class World {
 class WorldItem {
 
     constructor(id, name, is_static, image) {
-        this.id = id;
-        this.is_static = is_static;
-
-        this.name = name;
-        this.description = "";
-
-        this.image = image;
+        this.id = id;        // ID
+        this.is_static = is_static; // Beweglich oder nicht
+        this.name = name;   // Name
+        this.description = "";  // Beschreibung
+        this.image = image; // Bild
         this.x = 0; // Position X
         this.y = 0; // Position Y
         this.orientation = 0; // Richting in Grad (0-360), 0 = Norden
-
-        this.player_controlled = false;
-
+        this.player_controlled = false; // Spieler gesteuert
         this.sail_area = 0; // 0.0 - 1.0 // Kommt von Player wird manuell bestimmt 
         this.position_factor = 0; // Berechnet aus 
         this.weight_penalty = 1; // 1 und 0.5 // Kommt von Player wird manuell bestimmt
@@ -116,7 +109,23 @@ class WorldItem {
         this.weapons = [];
     }
 
+    export = () => {
+        return [this.id, this.is_static, this.name, this.description, this.image, this.x, this.y, this.orientation, this.player_controlled, this.sail_area, this.position_factor, this.weight_penalty];
+    }
+
     import = (data) => {
+        this.id = data[0];
+        this.is_static = data[1];
+        this.name = data[2];
+        this.description = data[3];
+        this.image = data[4];
+        this.x = data[5];
+        this.y = data[6];
+        this.orientation = data[7];
+        this.player_controlled = data[8];
+        this.sail_area = data[9];
+        this.position_factor = data[10];
+        this.weight_penalty = data[11];
     }
 
     info = (world) => {
@@ -149,6 +158,10 @@ class WorldItem {
                 break;
             case "image":
                 this.image = val;
+                break;
+            case "xy":
+                this.x = val[0];
+                this.y = val[1];
                 break;
             case "x":
                 this.x = val;
