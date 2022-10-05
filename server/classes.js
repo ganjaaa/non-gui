@@ -110,7 +110,20 @@ class WorldItem {
     }
 
     export = () => {
-        return [this.id, this.is_static, this.name, this.description, this.image, this.x, this.y, this.orientation, this.player_controlled, this.sail_area, this.position_factor, this.weight_penalty];
+        return [
+            this.id,
+            this.is_static,
+            this.name,
+            this.description,
+            this.image,
+            this.x,
+            this.y,
+            this.orientation,
+            this.player_controlled,
+            this.sail_area,
+            this.position_factor,
+            this.weight_penalty
+        ];
     }
 
     import = (data) => {
