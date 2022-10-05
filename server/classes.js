@@ -1,5 +1,7 @@
 'use strict'
 
+const crypto = require('crypto');
+
 const beauford_scale = [
     ["Calm", 0, 0],
     ["Light air", 2, 1],
@@ -16,19 +18,263 @@ const beauford_scale = [
     ["Hurricane", 70, 56],
 ];
 
+class SocketHandler {
+    constructor(admin_token, player_token) {
+        this.world = new World();
+        this.objects = [];
+        this.objects_map = {};
+        this.user = [];
+        this.admin_token = admin_token;
+        this.player_token = player_token;
+        this.update_objects_map();
+    }
+
+    onRequest = (request) => {
+        var connection = request.accept(null, request.origin); // TODO: SameOriginPolicy
+
+        // Vars
+        var index = this.user.push(connection) - 1;
+        var is_admin = false;
+        var is_player = false;
+
+        // onMessage
+        connection.on('message', (message) => {
+            if (message.type === 'utf8') {
+
+                // First Messenge is always the token
+                if (is_admin === false && is_player === false) {
+                    if (message.utf8Data === this.admin_token) {
+                        is_admin = true;
+                        this.broadcast_world();
+                        this.doLog('Admin connected.');
+                    } else if (message.utf8Data === this.player_token) {
+                        is_player = true;
+                        this.broadcast_world();
+                        this.doLog('Player connected.');
+                    }
+                    return;
+                }
+
+                // Parse JSON
+                var json = this.parseJSON(message.utf8Data);
+                if (json === false) {
+                    return;
+                }
+
+                if (is_admin === true) {
+                    this.handle_admin_commands(json);
+                }
+
+                if (is_player === true) {
+                    // TODO: Player commands
+                }
+
+                // Send world to player
+                this.broadcast_world();
+            }
+        });
+
+        // onClose
+        connection.on('close', (connection) => {
+            if (is_admin !== false || is_player !== false) {
+                this.user.splice(index, 1);
+            }
+        });
+
+    }
+
+    handle_admin_commands = (json) => {
+        if (json[0] === "system") {
+            this.commands(json[1], json[2]);
+            return;
+        }
+
+        if (json[0] === "world") {
+            this.world.commands(json[1], json[2]);
+            return;
+        }
+
+        if (this.objects_map.hasOwnProperty(json[0])) {
+            this.objects[this.objects_map[json[0]]].commands(json[1], json[2]);
+        }
+    }
+
+    commands = (cmd, val) => {
+        if (cmd == "add") {
+            this.objects.push(new WorldItem(this.world.getNextId()));
+            this.update_objects_map();
+            return;
+        }
+
+        if (cmd == "del") {
+            if (this.objects_map.hasOwnProperty(val)) {
+                this.objects.splice(this.objects_map[val], 1);
+            }
+            this.update_objects_map();
+            return;
+        }
+
+        if (cmd == "export") {
+            var data = {
+                world: this.world.export(),
+                objects: []
+            }
+            for (var i = 0; i < this.objects.length; i++) {
+                data.objects.push(this.objects[i].export());
+            }
+            this.broadcast_all({
+                type: 'export',
+                data: Buffer.from(JSON.stringify(data), 'utf-8').toString('base64')
+            });
+            return;
+        }
+
+        if (cmd == "import") {
+            var data = JSON.parse(Buffer.from(val, 'base64').toString('utf-8'));
+            this.world.import(data.world);
+            this.objects = [];
+            for (var i = 0; i < data.objects.length; i++) {
+                this.objects.push(new WorldItem(data.objects[i][0]));
+                this.objects[i].import(data.objects[i]);
+            }
+            this.update_objects_map();
+            return;
+        }
+    }
+    update_objects_map = () => {
+        this.objects_map = {};
+        for (var i = 0; i < this.objects.length; i++) {
+            this.objects_map[this.objects[i].id] = this.objects[i];
+        }
+    }
+
+    broadcast_all = (message) => {
+        var json = JSON.stringify(message);
+        for (var i = 0; i < this.user.length; i++) {
+            this.user[i].send(json);
+        }
+    }
+
+    broadcast_world = () => {
+        var data = {
+            type: 'update',
+            world: this.world.info(),
+            objects: []
+        };
+
+        for (var i = 0; i < this.objects.length; i++) {
+            data.objects.push(this.objects[i].info(this.world));
+        }
+        this.broadcast_all(data);
+    }
+
+    parseJSON = (json_string) => {
+        this.doLog('Received Message: ' + json_string);
+        try {
+            return JSON.parse(json_string);
+        } catch (e) {
+            this.doLog('Invalid JSON!');
+            return false;
+        }
+    }
+
+    doLog = (msg) => {
+        console.log((new Date()) + " " + msg);
+    }
+}
+
+class Dice {
+    /**
+     * Get a Random Nummber between min and max
+     * 
+     * @param {number} min
+     * @param {number} max
+     * @returns {number}
+     */
+    getRandom = (min, max) => {
+        return crypto.randomInt(min, max);
+    }
+
+    /**
+     * Calculate the min roll of an dice string like 2d6+3
+     * 
+     * @param {string} dice_string 
+     * @returns {number}
+     */
+    calculateMin = (dice_string) => {
+        var result = 0;
+        var dice_parts = dice_string.split("+");
+        for (var p = 0; p < dice_parts.length; p++) {
+            if (dice_parts[p].index('d') > -1) {
+                var dice = dice_parts[p].split("d");
+                result += dice[0];
+            } else {
+                result += parseInt(dice_parts[p]);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Calculate the roll of an dice string like 2d6+3
+     * 
+     * @param {string} dice_string 
+     * @returns {number}
+     */
+    calculate = (dice_string) => {
+        var result = 0;
+        var dice_parts = dice_string.split("+");
+        for (var p = 0; p < dice_parts.length; p++) {
+            if (dice_parts[p].index('d') > -1) {
+                var dice = dice_parts[p].split("d");
+                for (var i = 0; i < dice[0]; i++) {
+                    result += this.getRandom(1, dice[1]);
+                }
+            } else {
+                result += parseInt(dice_parts[p]);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Calculate the max roll of an dice string like 2d6+3
+     * 
+     * @param {string} dice_string 
+     * @returns {number}
+     */
+    calculateMax = (dice_string) => {
+        var result = 0;
+        var dice_parts = dice_string.split("+");
+        for (var p = 0; p < dice_parts.length; p++) {
+            if (dice_parts[p].index('d') > -1) {
+                var dice = dice_parts[p].split("d");
+                for (var i = 0; i < dice[0]; i++) {
+                    result += dice[1];
+                }
+            } else {
+                result += parseInt(dice_parts[p]);
+            }
+        }
+        return result;
+    }
+}
+
 class World {
     constructor() {
+        this.oid = 0;
         this.wind_source = 45; // Windrichtung in grad (0-360), 0 = Norden WINDQUELLE
         this.beauford_value = 4; // Borfor Scala 1-12 
     }
 
     export = () => {
-        return [this.wind_source, this.beauford_value];
+        return [this.oid, this.wind_source, this.beauford_value];
     }
 
     import = (data) => {
-        this.wind_source = data[0];
-        this.beauford_value = data[1];
+        this.oid = data[0];
+        this.wind_source = data[1];
+        this.beauford_value = data[2];
     }
 
     info = () => {
@@ -50,6 +296,11 @@ class World {
                 this.beauford_value = val;
                 break;
         }
+    }
+
+    getNextId = () => {
+        this.oid++;
+        return this.oid;
     }
 
     getWindSource = () => {
@@ -92,12 +343,12 @@ class World {
 
 class WorldItem {
 
-    constructor(id, name, is_static, image) {
-        this.id = id;        // ID
-        this.is_static = is_static; // Beweglich oder nicht
-        this.name = name;   // Name
+    constructor(id) {
+        this.id = parseInt(id);        // ID
+        this.is_static = false; // Beweglich oder nicht
+        this.name = "New World Item";   // Name
         this.description = "";  // Beschreibung
-        this.image = image; // Bild
+        this.image = "default.png"; // Bild
         this.x = 0; // Position X
         this.y = 0; // Position Y
         this.orientation = 0; // Richting in Grad (0-360), 0 = Norden
@@ -152,7 +403,6 @@ class WorldItem {
             orientation: this.orientation,
             player_controlled: this.player_controlled,
             sail_area: this.sail_area,
-            position_factor: this.position_factor,
             weight_penalty: this.weight_penalty,
             weapons: this.weapons,
             position_factor: this.getPositionFactor(world),
@@ -168,6 +418,9 @@ class WorldItem {
                 break;
             case "description":
                 this.description = val;
+                break;
+            case "static":
+                this.is_static = val;
                 break;
             case "image":
                 this.image = val;
@@ -191,9 +444,6 @@ class WorldItem {
             case "sail_area":
                 this.sail_area = val;
                 break;
-            case "position_factor":
-                this.position_factor = val;
-                break;
             case "weight_penalty":
                 this.weight_penalty = val;
                 break;
@@ -201,7 +451,7 @@ class WorldItem {
     }
 
     getTravelSpeed = (world) => {
-        return Number(world.getWindSpeed() * (this.getPositionFactor(world) / 10) * this.sail_area * this.weight_penalty).toFixed(2);
+        return (this.is_static) ? 0 : Number(world.getWindSpeed() * (this.getPositionFactor(world) / 10) * this.sail_area * this.weight_penalty).toFixed(2);
     }
 
     getPositionFactor = (world) => {
@@ -211,10 +461,43 @@ class WorldItem {
     }
 
     getRange = (world) => {
-        return Number(this.getTravelSpeed(world) * 0.5).toFixed(2);
+        return (this.is_static) ? 0 : Number(this.getTravelSpeed(world) * 0.5).toFixed(2);
     }
 
 }
 
-module.exports = { World, WorldItem }
+class WeaponGroup {
+    constructor() {
+        this.id = 0;
+
+        this.weapon_type = null;
+        this.weapon_count = 0;
+        this.ammunition_type = null;
+
+        this.radius = 30;
+        this.rotation_from_orientation = 0;
+    }
+
+    export = () => {
+    }
+
+    import = (data) => {
+    }
+
+    info = () => {
+        return {
+            id: this.id,
+            weapon_type: this.weapon_type,
+            weapon_count: this.weapon_count,
+            ammunition_type: this.ammunition_type,
+            radius: this.radius,
+            rotation_from_orientation: this.rotation_from_orientation,
+            range: [0, 0, 0], // TODO: Calculate
+            damage: [0, 0, 0], // TODO: Calculate
+        }
+    }
+}
+
+
+module.exports = { SocketHandler, Dice, World, WorldItem, WeaponGroup }
 
