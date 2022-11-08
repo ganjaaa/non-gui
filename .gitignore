@@ -1,0 +1,15 @@
+# ignore modules pulled in from npm
+node_modules/
+
+# ingnore composer
+vendor/
+
+# ignore builds
+dist/
+
+# vsccode
+.vscode
+.editorconfig
+
+# Nextcloud
+.sync-exclude.lst

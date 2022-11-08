@@ -1,4 +1,11 @@
 {
+  "name": "non-gui",
+  "description": "Naval Overview and Navigation - GUI",
+  "version": "0.0.5-alpha",
+  "license": "MIT",
+  "scripts": {
+    "serv": "npm install && node server.js"
+  },
   "dependencies": {
     "crypto": "^1.0.1",
     "http": "^0.0.1-security",

@@ -25,6 +25,7 @@ Befehle über Socket werden als JSON-Array mit 3 Elementen versendet.
  * import - Import eine CFG, Value: Base64-String
 
 ## ID: World
+ * tick - Aktueller Tick, Value: Integer
  * wind_source - Quelle des Windes, Value: 0-360
  * beauford_value - Wert auf der Beauford Skala, Value:  0-12
 

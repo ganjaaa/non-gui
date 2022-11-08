@@ -263,18 +263,20 @@ class Dice {
 class World {
     constructor() {
         this.oid = 0;
+        this.tick = 1;
         this.wind_source = 45; // Windrichtung in grad (0-360), 0 = Norden WINDQUELLE
         this.beauford_value = 4; // Borfor Scala 1-12 
     }
 
     export = () => {
-        return [this.oid, this.wind_source, this.beauford_value];
+        return [this.oid, this.tick, this.wind_source, this.beauford_value];
     }
 
     import = (data) => {
         this.oid = data[0];
-        this.wind_source = data[1];
-        this.beauford_value = data[2];
+        this.tick = data[1];
+        this.wind_source = data[2];
+        this.beauford_value = data[3];
     }
 
     info = () => {
@@ -289,6 +291,9 @@ class World {
 
     commands = (cmd, val) => {
         switch (cmd) {
+            case "tick":
+                this.tick = val;
+                break;
             case "wind_source":
                 this.wind_source = val;
                 break;
@@ -301,6 +306,14 @@ class World {
     getNextId = () => {
         this.oid++;
         return this.oid;
+    }
+
+    incTick = () => {
+        this.tick++;
+    }
+
+    getTick = () => {
+        return this.tick;
     }
 
     getWindSource = () => {
