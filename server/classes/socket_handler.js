@@ -124,6 +124,11 @@ class SocketHandler {
 
     commands = (cmd, val) => {
         switch (cmd) {
+            // change Edit Mode
+            case "editmode":
+                this.edit_mode = val;
+                return null;
+
             // Broadcast World
             case "broadcast":
                 this.broadcast_world();
@@ -189,6 +194,7 @@ class SocketHandler {
 
     broadcast_world = () => {
         var data = {
+            editmode: this.edit_mode,
             world: this.world.info(),
             objects: []
         };

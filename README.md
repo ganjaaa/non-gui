@@ -18,15 +18,16 @@ Befehle über Socket werden als JSON-Array mit 3 Elementen versendet.
 
 | System | Command | Value | Beschreibung
 | ----- | ----- | ----- | -----
+| system | editmode | Integer: 0/1 | 
 | system | broadcast | - | 
 | system | add | - | 
 | system | del | WorldItem.id | 
 | system | export | - | 
 | system | import | Base64-String | 
 |  |  |  | 
-| dice | roll | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
-| dice | max | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
-| dice | min | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
+| dice | roll | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | Würfelt einen Würfel
+| dice | max | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | Zeigt den max möglichen Wert eines Würfels
+| dice | min | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | Zeigt den min möglichen Wert eines Würfels
 |  |  |  | 
 | world | tick | Integer | 
 | world | wind_source | Value: 0-360 | 
