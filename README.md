@@ -2,8 +2,7 @@
 
 ## Server
 cd Server
-npm install 
-node server.js
+npm run serve
 
 ## Client
 Einfach im Browser öffenen
@@ -11,42 +10,65 @@ Einfach im Browser öffenen
 ggf in server.js und index.html die Credentials anpassen
 
 # Websocket
-Nach den Aufbau muss die erste Nachricht der Auth-Token sein, der den User als Admin oder User identifiert. Bei Erfolgt erhält der User eine Message vom `type:"update"`
+Nach den Aufbau muss die erste Nachricht der Auth-Token sein, der den User als Admin oder User identifiert. Bei Erfolgt erhält der User World-Update Messages
 
-# Befehle
+## Befehle
 Befehle über Socket werden als JSON-Array mit 3 Elementen versendet. 
-[ ID , ATTRIBUTE, VALUE]
+`[ SYSTEM , COMMAND, VALUE]`
+
+| System | Command | Value | Beschreibung
+| ----- | ----- | ----- | -----
+| system | broadcast | - | 
+| system | add | - | 
+| system | del | WorldItem.id | 
+| system | export | - | 
+| system | import | Base64-String | 
+|  |  |  | 
+| dice | roll | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
+| dice | max | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
+| dice | min | Dice Notation z.B. `3d6+2` oder `1d6+2d20+2` | 
+|  |  |  | 
+| world | tick | Integer | 
+| world | wind_source | Value: 0-360 | 
+| world | beauford_value | Value:  0-12 | 
+|  |  |  | 
+| [ID] | name | String |  Name des Objects
+| [ID] | description | String | Beschreibung des Objects
+| [ID] | image | String |  Bild des Objects
+| [ID] | static | Value: Integer 0/1 | gibt an ob ein Object bewegt werden kann oder nicht
+| [ID] | xy |  Array [Integer, Integer] |  Setzt die X und Y Achse
+| [ID] | x | Integer |  Setzt die X Achse
+| [ID] | y | Integer |  Setzt die Y Achse
+| [ID] | orientation |  Integer 0-360 | Ausrichtung des Objectes
+| [ID] | player_controlled |   Integer 0/1 | Ob das Objekt vom Spieler Kontrolliert werden darf
+| [ID] | sail_area | Double 0.0 - 1.0 | setzt Segelfläche
+| [ID] | weight_penalty | Double 0.0 - 1.0 | setzt Gewichtsabzüge
+
+## Responses
+Anworten des Server erfolgen im selben Schema wie die Befehle
+`[ SYSTEM , COMMAND , VALUE]`
+| System | Command | Value | Beschreibung
+| ----- | ----- | ----- | -----
+| system | export | String | Ein Base64 String des Exports
+| ----- | ----- | ----- | -----
+| dice | roll | Integer | Ergebnis des Wurfs
+| dice | max | Integer | Das Max mögliche Ergebnis des Würfels
+| dice | min | Integer | Das Min mögliche Ergebnis des Würfels
+| ----- | ----- | ----- | -----
+| world | update | Object | Ein Objekt der kompletten Welt zum Rendern der GUI
 
 
-## ID: System
- * add - Fügt ein neues WorldItem hinzu, Value: 0
- * del - Entfernt ein WorldItem, Value: WorldItem.id
- * export - Erstellt einen CFG Export, Value: 0
- * import - Import eine CFG, Value: Base64-String
-
-## ID: World
- * tick - Aktueller Tick, Value: Integer
- * wind_source - Quelle des Windes, Value: 0-360
- * beauford_value - Wert auf der Beauford Skala, Value:  0-12
-
-## ID: 0-999999999 des Objectes
- * name - Name des Objects, Value: String
- * description - Beschreibung des Objects, Value: String
- * image - Bild des Objects, Value: String
- * static - gibt an ob ein Object bewegt werden kann oder nicht, Value: Intger 0/1
- * xy - Setzt die X und Y Koordinate, Value: [Integer, Integer]
- * x - Setzt die X Achse, Value: Integer
- * y - Setzt die Y Achse, Value: Integer
- * orientation - Ausrichtung des Objectes, Value: Integer 0-360
- * player_controlled - Ob das Objekt vom Spieler Kontrolliert werden darf, Value: Integer 0/1
- * sail_area - Segelfläche, Value: Double 0.0 - 1.0
- * weight_penalty - Gewichtsabzüge: Value: Double 0.0 - 1.0
 
 
 # TODO
  * WeaponGroup Erzeugen/Entfernen
+ * Aktuell sind alle Änderungen live. Es müsste ein Game-Mode getriggert werden, welcher Änderungen erst beim Erhöhen des Ticks übernimmt
  * Rundensystem
  * * Wenn eine Runde gestartet wird werden alle Änderungen vorgehalten
  * * Wenn eine Runde dann commited wird werden die Änderungen vollzogen und ggf Treffer bei beschuss Angezeigt.
  * * Es sollte vermutlich ein Log geführt werden was für änderungen getätigt wurden
+ * * Koordinaten müssten kompliziert berechnet werden
  * Mehr Sicherheit 
+
+ # Notes:
+ WYSIWYG Editor: https://jbt.github.io/markdown-editor/

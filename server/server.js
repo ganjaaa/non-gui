@@ -4,7 +4,7 @@ process.title = 'non-gui-server';
 // Includes
 const config = require('./config');
 const webSocketServer = require('websocket').server;
-const { SocketHandler } = require('./classes.js');
+const { SocketHandler } = require('./classes/socket_handler.js');
 const http = require('http');
 
 // HTTP server

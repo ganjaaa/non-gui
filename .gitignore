@@ -13,3 +13,6 @@ dist/
 
 # Nextcloud
 .sync-exclude.lst
+
+# Notizen
+notes.md

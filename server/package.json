@@ -4,7 +4,7 @@
   "version": "0.0.5-alpha",
   "license": "MIT",
   "scripts": {
-    "serv": "npm install && node server.js"
+    "serve": "npm install && node server.js"
   },
   "dependencies": {
     "crypto": "^1.0.1",
