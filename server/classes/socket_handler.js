@@ -2,19 +2,14 @@
 
 const { Dice } = require('./dice.js');
 const { World } = require('./world.js');
-const { WorldItem } = require('./world_item.js');
 
 class SocketHandler {
     constructor(admin_token, player_token) {
         this.dice = new Dice();
         this.world = new World();
-        this.edit_mode = true;
-        this.objects = [];
-        this.objects_map = {};
         this.user = [];
         this.admin_token = admin_token;
         this.player_token = player_token;
-        this.update_objects_map();
         this.socketTimer = setInterval(this.broadcast_world, 10000);
     }
 
@@ -54,16 +49,16 @@ class SocketHandler {
                 if (is_admin === true) {
                     let response = this.handle_admin_commands(json);
                     if (response !== null) {
-                        connection.send(JSON.stringify(response));
+                        connection.send("" + JSON.stringify(response));
                     }
                     return;
                 }
 
                 // if Connection is Player
-                if (is_player === true && this.edit_mode === false) {
+                if (is_player === true) {
                     let response = this.handle_player_commands(json);
                     if (response !== null) {
-                        connection.send(JSON.stringify(response));
+                        connection.send("" + JSON.stringify(response));
                     }
                     return;
                 }
@@ -106,103 +101,48 @@ class SocketHandler {
         }
 
         // World
-        // TODO: Refactor
         if (json[0] === "world") {
             return this.world.commands(json[1], json[2]);
         }
 
-
         // World Items
-        // TODO: Refactor
-        if (this.objects_map.hasOwnProperty(json[0])) {
-            return this.objects[this.objects_map[json[0]]].commands(json[1], json[2]);
-        }
-
-        // Nothing
-        return null;
+        return this.world.itemCommand(json[1], json[2]);
     }
 
     commands = (cmd, val) => {
         switch (cmd) {
-            // change Edit Mode
-            case "editmode":
-                this.edit_mode = val;
-                return null;
-
             // Broadcast World
             case "broadcast":
                 this.broadcast_world();
                 return null;
 
-            // Add new WorldItem
-            case "add":
-                var newId = this.world.getNextId();
-                this.objects.push(new WorldItem(newId));
-                this.update_objects_map();
-                return ["system", "add", newId];
-
-            // Remove Worlditem
-            case "del":
-                if (this.objects_map.hasOwnProperty(val)) {
-                    this.objects.splice(this.objects_map[val], 1);
-                }
-                this.update_objects_map();
-                return null;
-
             // Export all
             case "export":
-                var data = {
-                    world: this.world.export(),
-                    objects: []
-                }
-                for (var i = 0; i < this.objects.length; i++) {
-                    data.objects.push(this.objects[i].export());
-                }
+                var data = this.world.export();
                 var exp = Buffer.from(JSON.stringify(data), 'utf-8').toString('base64');
                 return ["system", "export", exp];
 
             // Import all
             case "import":
                 var data = JSON.parse(Buffer.from(val, 'base64').toString('utf-8'));
-                this.world.import(data.world);
-                this.objects = [];
-                for (var i = 0; i < data.objects.length; i++) {
-                    this.objects.push(new WorldItem(data.objects[i][0]));
-                    this.objects[i].import(data.objects[i]);
-                }
-                this.update_objects_map();
+                this.world.import(data);
                 this.broadcast_all();
                 return null;
+
             default:
                 return null;
-        }
-    }
-
-    update_objects_map = () => {
-        this.objects_map = {};
-        for (var i = 0; i < this.objects.length; i++) {
-            this.objects_map[this.objects[i].id] = this.objects[i];
         }
     }
 
     broadcast_all = (message) => {
         var json = JSON.stringify(message);
         for (var i = 0; i < this.user.length; i++) {
-            this.user[i].send(json);
+            this.user[i].send("" + json);
         }
     }
 
     broadcast_world = () => {
-        var data = {
-            editmode: this.edit_mode,
-            world: this.world.info(),
-            objects: []
-        };
-
-        for (var i = 0; i < this.objects.length; i++) {
-            data.objects.push(this.objects[i].info(this.world));
-        }
-        this.broadcast_all(["world", "update", data]);
+        this.broadcast_all(["world", "update", this.world.info()]);
     }
 
     parseJSON = (json_string) => {
