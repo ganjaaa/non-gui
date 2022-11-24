@@ -68,6 +68,7 @@ class WorldItem {
             position_factor: this.getPositionFactor(world),
             travel_speed: this.getTravelSpeed(world),
             range: this.getRange(world),
+            static: this.is_static
         }
     }
 
