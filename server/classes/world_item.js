@@ -1,8 +1,6 @@
 'use strict'
 
-
 const { WeaponGroup } = require('./weapon_group.js');
-
 class WorldItem {
 
     constructor(id) {
